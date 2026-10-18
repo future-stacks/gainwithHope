@@ -22,10 +22,18 @@ struct ActiveWorkoutView: View {
                 Section {
                     TextField("Workout name", text: $workout.name)
                         .font(.title2.bold())
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Label(formatClock(context.date.timeIntervalSince(workout.startDate)), systemImage: "timer")
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
+                    HStack {
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            Label(formatClock(context.date.timeIntervalSince(workout.startDate)), systemImage: "timer")
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if let heartRate = WatchBridge.shared.heartRate {
+                            Label("\(heartRate) BPM", systemImage: "heart.fill")
+                                .monospacedDigit()
+                                .foregroundStyle(.pink)
+                        }
                     }
                     TextField("Notes", text: $workout.notes, axis: .vertical)
                 }
@@ -37,6 +45,7 @@ struct ActiveWorkoutView: View {
                         unit: unit,
                         onSetCompleted: {
                             if autoRestTimer { restTimer.start(seconds: restSeconds) }
+                            WatchBridge.shared.workoutProgressed(workout)
                         },
                         onRemove: { remove(entry) }
                     )
@@ -127,6 +136,7 @@ struct ActiveWorkoutView: View {
             context.addExercise(exercise, to: workout, order: order)
             order += 1
         }
+        WatchBridge.shared.workoutProgressed(workout)
     }
 
     private func remove(_ entry: WorkoutExercise) {

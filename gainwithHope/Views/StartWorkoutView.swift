@@ -13,7 +13,7 @@ struct StartWorkoutView: View {
             List {
                 Section {
                     Button {
-                        context.startWorkout(from: nil)
+                        start(nil)
                     } label: {
                         Label("Start Empty Workout", systemImage: "plus.circle.fill")
                             .font(.headline)
@@ -25,7 +25,7 @@ struct StartWorkoutView: View {
                 Section {
                     ForEach(routines) { routine in
                         Button {
-                            context.startWorkout(from: routine)
+                            start(routine)
                         } label: {
                             RoutineRow(routine: routine)
                         }
@@ -79,6 +79,11 @@ struct StartWorkoutView: View {
                 RoutineEditorView(routine: target.routine)
             }
         }
+    }
+
+    private func start(_ routine: Routine?) {
+        let workout = context.startWorkout(from: routine)
+        WatchBridge.shared.workoutStarted(workout)
     }
 
     private var weekSummary: String {

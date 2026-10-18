@@ -5,6 +5,7 @@ struct SettingsView: View {
     @AppStorage("restSeconds") private var restSeconds = 90
     @AppStorage("autoRestTimer") private var autoRestTimer = true
     @AppStorage("saveToHealth") private var saveToHealth = true
+    @AppStorage("useWatch") private var useWatch = true
 
     @State private var healthConnected = HealthKitManager.shared.canSaveWorkouts
     @State private var healthError: String?
@@ -53,6 +54,14 @@ struct SettingsView: View {
                             Text(healthError).foregroundStyle(.red)
                         }
                     }
+                }
+
+                Section {
+                    Toggle("Track workouts on Apple Watch", isOn: $useWatch)
+                } header: {
+                    Text("Apple Watch")
+                } footer: {
+                    Text("Starting a workout opens gainwithHope on your watch, which records heart rate and calories and counts toward your Exercise ring. The watch saves the workout to Apple Health when you finish on your iPhone.")
                 }
 
                 Section("About") {

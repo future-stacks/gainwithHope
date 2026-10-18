@@ -7,7 +7,9 @@ import UserNotifications
 /// when the phone is locked or the app is in the background.
 @Observable
 final class RestTimer {
-    private(set) var endDate: Date?
+    private(set) var endDate: Date? {
+        didSet { WatchBridge.shared.restTimerChanged(endDate: endDate) }
+    }
     private(set) var duration: TimeInterval = 0
 
     @ObservationIgnored private var task: Task<Void, Never>?

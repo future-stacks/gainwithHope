@@ -49,12 +49,21 @@ struct RootView: View {
 
         switch close.action {
         case .discard:
+            WatchBridge.shared.workoutDiscarded(id: close.workout.uuid)
             context.delete(close.workout)
             try? context.save()
         case .finish:
             let workout = close.workout
+            let id = workout.uuid
             let snapshot = WorkoutSnapshot(name: workout.name, start: workout.startDate, end: close.date)
-            guard context.finishWorkout(workout, at: close.date), saveToHealth else { return }
+            guard context.finishWorkout(workout, at: close.date) else {
+                WatchBridge.shared.workoutDiscarded(id: id)
+                return
+            }
+            let watchSaves = WatchBridge.shared.workoutFinished(
+                id: id, name: snapshot.name, endDate: close.date, saveToHealth: saveToHealth
+            )
+            guard saveToHealth, !watchSaves else { return }
             Task {
                 do {
                     try await HealthKitManager.shared.save(snapshot)

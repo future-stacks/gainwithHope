@@ -55,6 +55,8 @@ final class RoutineExercise {
 
 @Model
 final class Workout {
+    /// Stable id shared with the Apple Watch app.
+    var uuid: UUID = UUID()
     var name: String
     var startDate: Date
     /// nil while the workout is in progress.
