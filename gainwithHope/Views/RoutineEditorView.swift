@@ -9,14 +9,18 @@ struct RoutineEditorView: View {
     let routine: Routine?
 
     @State private var name: String
+    @State private var weekday: Int
+    @State private var notes: String
     @State private var entries: [DraftEntry]
     @State private var showPicker = false
 
     init(routine: Routine?) {
         self.routine = routine
         _name = State(initialValue: routine?.name ?? "")
+        _weekday = State(initialValue: routine?.weekday ?? 0)
+        _notes = State(initialValue: routine?.notes ?? "")
         _entries = State(initialValue: routine?.sortedEntries.compactMap { entry in
-            entry.exercise.map { DraftEntry(exercise: $0, sets: entry.targetSets) }
+            entry.exercise.map { DraftEntry(exercise: $0, sets: entry.targetSets, repTarget: entry.repTarget) }
         } ?? [])
     }
 
@@ -25,16 +29,30 @@ struct RoutineEditorView: View {
             List {
                 Section {
                     TextField("Routine name, e.g. Push Day", text: $name)
+                    Picker("Day", selection: $weekday) {
+                        Text("Any day").tag(0)
+                        // Monday first.
+                        ForEach([2, 3, 4, 5, 6, 7, 1], id: \.self) { day in
+                            Text(Calendar.current.weekdaySymbols[day - 1]).tag(day)
+                        }
+                    }
+                    TextField("Notes, e.g. cardio finisher", text: $notes, axis: .vertical)
+                        .lineLimit(1...4)
                 }
                 Section {
                     ForEach($entries) { $entry in
-                        Stepper(value: $entry.sets, in: 1...10) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(entry.exercise.name)
-                                Text("\(entry.sets) sets")
-                                    .font(.caption)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(entry.exercise.name)
+                            HStack {
+                                Stepper("\(entry.sets) sets", value: $entry.sets, in: 1...10)
+                                    .fixedSize()
+                                Text("×")
                                     .foregroundStyle(.secondary)
+                                TextField("reps", text: $entry.repTarget)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(maxWidth: 110)
                             }
+                            .font(.subheadline)
                         }
                     }
                     .onDelete { entries.remove(atOffsets: $0) }
@@ -71,7 +89,7 @@ struct RoutineEditorView: View {
             }
             .sheet(isPresented: $showPicker) {
                 ExercisePickerView { picked in
-                    entries += picked.map { DraftEntry(exercise: $0, sets: 3) }
+                    entries += picked.map { DraftEntry(exercise: $0, sets: 3, repTarget: "") }
                 }
             }
         }
@@ -93,8 +111,11 @@ struct RoutineEditorView: View {
             target = Routine(name: trimmedName)
             context.insert(target)
         }
+        target.weekday = weekday
+        target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         for (index, draft) in entries.enumerated() {
-            let entry = RoutineExercise(order: index, targetSets: draft.sets)
+            let repTarget = draft.repTarget.trimmingCharacters(in: .whitespaces)
+            let entry = RoutineExercise(order: index, targetSets: draft.sets, repTarget: repTarget)
             context.insert(entry)
             entry.exercise = draft.exercise
             target.entries.append(entry)
@@ -108,4 +129,5 @@ private struct DraftEntry: Identifiable {
     let id = UUID()
     let exercise: Exercise
     var sets: Int
+    var repTarget: String
 }

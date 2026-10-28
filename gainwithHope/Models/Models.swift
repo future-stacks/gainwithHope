@@ -26,6 +26,10 @@ final class Exercise {
 final class Routine {
     var name: String
     var createdAt: Date
+    /// Copied into the workout's notes when you start it (e.g. the cardio finisher).
+    var notes: String = ""
+    /// Calendar weekday this routine is planned for (1 = Sunday … 7 = Saturday), 0 = any day.
+    var weekday: Int = 0
 
     @Relationship(deleteRule: .cascade, inverse: \RoutineExercise.routine)
     var entries: [RoutineExercise] = []
@@ -44,12 +48,15 @@ final class Routine {
 final class RoutineExercise {
     var order: Int
     var targetSets: Int
+    /// Free text like "8–10", "12–15 ea" or "45s".
+    var repTarget: String = ""
     var exercise: Exercise?
     var routine: Routine?
 
-    init(order: Int, targetSets: Int) {
+    init(order: Int, targetSets: Int, repTarget: String = "") {
         self.order = order
         self.targetSets = targetSets
+        self.repTarget = repTarget
     }
 }
 
@@ -97,6 +104,8 @@ final class Workout {
 @Model
 final class WorkoutExercise {
     var order: Int
+    /// Rep target from the routine, shown while logging.
+    var repTarget: String = ""
     var exercise: Exercise?
     var workout: Workout?
 
@@ -164,10 +173,13 @@ extension Exercise {
 extension ModelContext {
     /// Adds an exercise to a workout, pre-filling sets with what you did last time.
     @discardableResult
-    func addExercise(_ exercise: Exercise, to workout: Workout, order: Int, setCount: Int? = nil) -> WorkoutExercise {
+    func addExercise(
+        _ exercise: Exercise, to workout: Workout, order: Int, setCount: Int? = nil, repTarget: String = ""
+    ) -> WorkoutExercise {
         let entry = WorkoutExercise(order: order)
         insert(entry)
         entry.exercise = exercise
+        entry.repTarget = repTarget
         workout.exercises.append(entry)
 
         let previous = exercise.lastCompletedEntry(excluding: workout)?.sortedSets.filter(\.isCompleted) ?? []
@@ -189,10 +201,11 @@ extension ModelContext {
     @discardableResult
     func startWorkout(from routine: Routine?) -> Workout {
         let workout = Workout(name: routine?.name ?? Workout.defaultName())
+        workout.notes = routine?.notes ?? ""
         insert(workout)
         for (i, entry) in (routine?.sortedEntries ?? []).enumerated() {
             if let exercise = entry.exercise {
-                addExercise(exercise, to: workout, order: i, setCount: entry.targetSets)
+                addExercise(exercise, to: workout, order: i, setCount: entry.targetSets, repTarget: entry.repTarget)
             }
         }
         try? save()
@@ -221,6 +234,14 @@ extension ModelContext {
         workout.endDate = endDate
         try? save()
         return true
+    }
+}
+
+extension Routine {
+    /// "MON", "TUE"… or nil when the routine isn't tied to a day.
+    var weekdayLabel: String? {
+        guard (1...7).contains(weekday) else { return nil }
+        return Calendar.current.shortWeekdaySymbols[weekday - 1].uppercased()
     }
 }
 

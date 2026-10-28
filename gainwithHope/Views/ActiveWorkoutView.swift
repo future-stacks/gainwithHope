@@ -185,10 +185,17 @@ private struct ExerciseSection: View {
             .buttonStyle(.borderless)
         } header: {
             HStack {
-                Text(entry.displayName)
-                    .font(.headline)
-                    .foregroundStyle(.tint)
-                    .textCase(nil)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.displayName)
+                        .font(.headline)
+                        .foregroundStyle(.tint)
+                    if !entry.repTarget.isEmpty {
+                        Text("Target: \(entry.repTarget)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .textCase(nil)
                 Spacer()
                 Menu {
                     Button {

@@ -11,6 +11,27 @@ struct StartWorkoutView: View {
     var body: some View {
         NavigationStack {
             List {
+                if routines.contains(where: { $0.weekday != 0 }) {
+                    Section("Today") {
+                        if let routine = todaysRoutine {
+                            Button {
+                                start(routine)
+                            } label: {
+                                HStack {
+                                    RoutineRow(routine: routine)
+                                    Spacer()
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title)
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                        } else {
+                            Label("Rest day: get your steps in", systemImage: "figure.walk")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section {
                     Button {
                         start(nil)
@@ -86,6 +107,11 @@ struct StartWorkoutView: View {
         WatchBridge.shared.workoutStarted(workout)
     }
 
+    private var todaysRoutine: Routine? {
+        let weekday = Calendar.current.component(.weekday, from: .now)
+        return routines.first { $0.weekday == weekday }
+    }
+
     private var weekSummary: String {
         guard let weekStart = Calendar.current.dateInterval(of: .weekOfYear, for: .now)?.start else { return "" }
         let count = finishedWorkouts.filter { $0.startDate >= weekStart }.count
@@ -98,9 +124,16 @@ private struct RoutineRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(routine.name)
-                .font(.headline)
-                .foregroundStyle(.primary)
+            HStack(spacing: 8) {
+                if let day = routine.weekdayLabel {
+                    Text(day)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.tint)
+                }
+                Text(routine.name)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+            }
             Text(routine.sortedEntries.compactMap { $0.exercise?.name }.joined(separator: ", "))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
