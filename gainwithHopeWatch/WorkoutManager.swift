@@ -63,9 +63,7 @@ final class WorkoutManager: NSObject {
 
                 let startDate = Date()
                 session.startActivity(with: startDate)
-                builder.beginCollection(withStart: startDate) { _, error in
-                    if let error { print("beginCollection failed: \(error)") }
-                }
+                try await builder.beginCollection(at: startDate)
                 self.isRunning = true
                 self.isPaused = false
 
