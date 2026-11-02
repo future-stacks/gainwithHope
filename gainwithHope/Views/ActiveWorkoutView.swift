@@ -157,14 +157,16 @@ private struct ExerciseSection: View {
         let sets = entry.sortedSets
         let previous = entry.exercise?.lastCompletedEntry(excluding: workout)?.sortedSets.filter(\.isCompleted) ?? []
         let numbers = setNumbers(for: sets)
+        let tracking = entry.exercise?.tracking ?? .weightReps
 
         Section {
-            SetHeaderRow(unit: unit)
+            SetHeaderRow(tracking: tracking, unit: unit)
             ForEach(Array(sets.enumerated()), id: \.element.id) { index, set in
                 SetRowView(
                     set: set,
                     label: numbers[index],
                     previous: previous.indices.contains(index) ? previous[index] : nil,
+                    tracking: tracking,
                     unit: unit,
                     onCompleted: onSetCompleted
                 )
@@ -232,7 +234,9 @@ private struct ExerciseSection: View {
             order: order,
             weightKg: last?.weightKg ?? 0,
             reps: last?.reps ?? 0,
-            isWarmup: warmup
+            isWarmup: warmup,
+            durationSeconds: last?.durationSeconds ?? 0,
+            distanceKm: last?.distanceKm ?? 0
         )
         context.insert(set)
         entry.sets.append(set)
@@ -240,18 +244,27 @@ private struct ExerciseSection: View {
 }
 
 private struct SetHeaderRow: View {
+    let tracking: ExerciseTracking
     let unit: WeightUnit
 
     var body: some View {
         HStack(spacing: 10) {
             Text("SET").frame(width: 30)
             Text("PREVIOUS").frame(maxWidth: .infinity, alignment: .leading)
-            Text(unit.rawValue.uppercased()).frame(width: 64)
-            Text("REPS").frame(width: 52)
+            Text(columns.first).frame(width: 64)
+            Text(columns.second).frame(width: 52)
             Image(systemName: "checkmark").frame(width: 32)
         }
         .font(.caption2.weight(.semibold))
         .foregroundStyle(.secondary)
+    }
+
+    private var columns: (first: String, second: String) {
+        switch tracking {
+        case .weightReps: return (unit.rawValue.uppercased(), "REPS")
+        case .time: return ("SEC", "")
+        case .cardio: return ("MIN", "KM")
+        }
     }
 }
 

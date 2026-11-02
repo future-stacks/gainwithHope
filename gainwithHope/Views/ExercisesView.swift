@@ -63,12 +63,19 @@ private struct ExerciseGroup: Identifiable {
 }
 
 struct ExerciseDetailView: View {
-    let exercise: Exercise
+    @Bindable var exercise: Exercise
     @AppStorage("weightUnit") private var unit: WeightUnit = .kg
 
     var body: some View {
         let sessions = self.sessions
+        let tracking = exercise.tracking
         List {
+            Section {
+                Picker("Log as", selection: $exercise.tracking) {
+                    ForEach(ExerciseTracking.allCases) { Text($0.label).tag($0) }
+                }
+            }
+
             if sessions.isEmpty {
                 ContentUnavailableView(
                     "No history yet",
@@ -77,22 +84,30 @@ struct ExerciseDetailView: View {
                 )
             } else {
                 Section("Personal Records") {
-                    LabeledContent("Heaviest weight", value: unit.format(sessions.map(\.heaviestKg).max() ?? 0))
-                    LabeledContent("Best est. 1RM", value: unit.format(sessions.map(\.bestOneRepMaxKg).max() ?? 0))
-                    LabeledContent("Most reps in a set", value: "\(sessions.map(\.mostReps).max() ?? 0)")
+                    switch tracking {
+                    case .weightReps:
+                        LabeledContent("Heaviest weight", value: unit.format(sessions.map(\.heaviestKg).max() ?? 0))
+                        LabeledContent("Best est. 1RM", value: unit.format(sessions.map(\.bestOneRepMaxKg).max() ?? 0))
+                        LabeledContent("Most reps in a set", value: "\(sessions.map(\.mostReps).max() ?? 0)")
+                    case .time:
+                        LabeledContent("Longest hold", value: formatSeconds(sessions.map(\.longestSeconds).max() ?? 0))
+                    case .cardio:
+                        LabeledContent("Longest session", value: formatDuration(TimeInterval(sessions.map(\.totalSeconds).max() ?? 0)))
+                        LabeledContent("Furthest distance", value: "\((sessions.map(\.totalKm).max() ?? 0).clean) km")
+                    }
                     LabeledContent("Sessions", value: "\(sessions.count)")
                 }
 
                 if sessions.count > 1 {
-                    Section("Estimated 1RM") {
+                    Section(chartTitle(tracking)) {
                         Chart(Array(sessions.reversed())) { session in
                             LineMark(
                                 x: .value("Date", session.date),
-                                y: .value("Weight", unit.fromKg(session.bestOneRepMaxKg))
+                                y: .value("Value", chartValue(session, tracking))
                             )
                             PointMark(
                                 x: .value("Date", session.date),
-                                y: .value("Weight", unit.fromKg(session.bestOneRepMaxKg))
+                                y: .value("Value", chartValue(session, tracking))
                             )
                         }
                         .chartYScale(domain: .automatic(includesZero: false))
@@ -106,7 +121,7 @@ struct ExerciseDetailView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(session.date.formatted(date: .abbreviated, time: .omitted))
                                 .font(.subheadline.weight(.semibold))
-                            Text(session.sets.map { "\(unit.fromKg($0.weightKg).clean)×\($0.reps)" }.joined(separator: "  "))
+                            Text(session.sets.map { $0.summary(tracking, unit: unit) }.joined(separator: ",  "))
                                 .font(.callout.monospacedDigit())
                                 .foregroundStyle(.secondary)
                         }
@@ -116,6 +131,22 @@ struct ExerciseDetailView: View {
         }
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func chartTitle(_ tracking: ExerciseTracking) -> String {
+        switch tracking {
+        case .weightReps: return "Estimated 1RM (\(unit.rawValue))"
+        case .time: return "Longest hold (seconds)"
+        case .cardio: return "Minutes per session"
+        }
+    }
+
+    private func chartValue(_ session: ExerciseSession, _ tracking: ExerciseTracking) -> Double {
+        switch tracking {
+        case .weightReps: return unit.fromKg(session.bestOneRepMaxKg)
+        case .time: return Double(session.longestSeconds)
+        case .cardio: return Double(session.totalSeconds) / 60
+        }
     }
 
     private var sessions: [ExerciseSession] {
@@ -136,4 +167,7 @@ private struct ExerciseSession: Identifiable {
     var heaviestKg: Double { sets.map(\.weightKg).max() ?? 0 }
     var bestOneRepMaxKg: Double { sets.map(\.estimatedOneRepMaxKg).max() ?? 0 }
     var mostReps: Int { sets.map(\.reps).max() ?? 0 }
+    var longestSeconds: Int { sets.map(\.durationSeconds).max() ?? 0 }
+    var totalSeconds: Int { sets.reduce(0) { $0 + $1.durationSeconds } }
+    var totalKm: Double { sets.reduce(0) { $0 + $1.distanceKm } }
 }

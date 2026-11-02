@@ -53,3 +53,23 @@ func formatDuration(_ interval: TimeInterval) -> String {
     let minutes = max(0, Int(interval / 60))
     return minutes >= 60 ? "\(minutes / 60)h \(minutes % 60)m" : "\(minutes)m"
 }
+
+/// "45 s" or "1:30"
+func formatSeconds(_ seconds: Int) -> String {
+    seconds < 60 ? "\(seconds) s" : formatClock(TimeInterval(seconds))
+}
+
+extension WorkoutSet {
+    /// One set as text: "80 kg × 8", "45 s" or "20 min · 2.1 km".
+    func summary(_ tracking: ExerciseTracking, unit: WeightUnit) -> String {
+        switch tracking {
+        case .weightReps:
+            return "\(unit.format(weightKg)) × \(reps)"
+        case .time:
+            return formatSeconds(durationSeconds)
+        case .cardio:
+            let minutes = "\((Double(durationSeconds) / 60).clean) min"
+            return distanceKm > 0 ? "\(minutes) · \(distanceKm.clean) km" : minutes
+        }
+    }
+}

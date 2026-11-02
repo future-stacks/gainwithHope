@@ -54,6 +54,120 @@ enum SeedData {
         ("Clean and Press", "Full Body"),
     ]
 
+    // MARK: - Library v2: cardio, timed holds, more machines
+
+    private static let libraryV2: [(String, String, ExerciseTracking)] = [
+        // Cardio
+        ("StairMaster", "Cardio", .cardio),
+        ("Treadmill Incline Walk", "Cardio", .cardio),
+        ("Treadmill Run", "Cardio", .cardio),
+        ("Stationary Bike", "Cardio", .cardio),
+        ("Spin Bike", "Cardio", .cardio),
+        ("Elliptical", "Cardio", .cardio),
+        ("Rowing Machine", "Cardio", .cardio),
+        ("Assault Bike", "Cardio", .cardio),
+        ("SkiErg", "Cardio", .cardio),
+        ("Jump Rope", "Cardio", .cardio),
+        ("Outdoor Walk", "Cardio", .cardio),
+        ("Outdoor Run", "Cardio", .cardio),
+        // Timed holds
+        ("Plank", "Core", .time),
+        ("Side Plank", "Core", .time),
+        ("Hollow Hold", "Core", .time),
+        ("Wall Sit", "Legs", .time),
+        ("Dead Hang", "Back", .time),
+        ("Battle Ropes", "Full Body", .time),
+        // Chest
+        ("Pec Deck (Machine)", "Chest", .weightReps),
+        ("Cable Crossover", "Chest", .weightReps),
+        ("Decline Bench Press (Barbell)", "Chest", .weightReps),
+        ("Incline Bench Press (Smith Machine)", "Chest", .weightReps),
+        ("Assisted Dip (Machine)", "Chest", .weightReps),
+        // Back
+        ("Assisted Pull Up (Machine)", "Back", .weightReps),
+        ("Close Grip Lat Pulldown", "Back", .weightReps),
+        ("Straight Arm Pulldown (Cable)", "Back", .weightReps),
+        ("Single Arm Cable Row", "Back", .weightReps),
+        ("Rack Pull", "Back", .weightReps),
+        // Shoulders
+        ("Arnold Press (Dumbbell)", "Shoulders", .weightReps),
+        ("Front Raise (Dumbbell)", "Shoulders", .weightReps),
+        ("Lateral Raise (Cable)", "Shoulders", .weightReps),
+        ("Upright Row (Cable)", "Shoulders", .weightReps),
+        ("Shrug (Dumbbell)", "Shoulders", .weightReps),
+        // Arms
+        ("Bicep Curl (Cable)", "Biceps", .weightReps),
+        ("Bicep Curl (Machine)", "Biceps", .weightReps),
+        ("Incline Curl (Dumbbell)", "Biceps", .weightReps),
+        ("Concentration Curl", "Biceps", .weightReps),
+        ("Triceps Extension (Machine)", "Triceps", .weightReps),
+        ("Triceps Dip (Machine)", "Triceps", .weightReps),
+        ("Triceps Kickback (Dumbbell)", "Triceps", .weightReps),
+        ("Overhead Triceps Extension (Cable)", "Triceps", .weightReps),
+        // Legs & glutes
+        ("Goblet Squat", "Legs", .weightReps),
+        ("Smith Machine Squat", "Legs", .weightReps),
+        ("Pendulum Squat", "Legs", .weightReps),
+        ("Lying Leg Curl (Machine)", "Legs", .weightReps),
+        ("Seated Calf Raise", "Legs", .weightReps),
+        ("Step Up (Dumbbell)", "Legs", .weightReps),
+        ("Walking Lunge (Dumbbell)", "Legs", .weightReps),
+        ("Sumo Deadlift", "Legs", .weightReps),
+        ("Hip Adduction (Machine)", "Glutes", .weightReps),
+        ("Cable Kickback", "Glutes", .weightReps),
+        ("Cable Pull Through", "Glutes", .weightReps),
+        ("Single Leg Hip Thrust", "Glutes", .weightReps),
+        // Core & full body
+        ("Russian Twist", "Core", .weightReps),
+        ("Bicycle Crunch", "Core", .weightReps),
+        ("Dead Bug", "Core", .weightReps),
+        ("Pallof Press (Cable)", "Core", .weightReps),
+        ("Lying Leg Raise", "Core", .weightReps),
+        ("Burpee", "Full Body", .weightReps),
+        ("Thruster (Dumbbell)", "Full Body", .weightReps),
+        ("Farmer's Carry", "Full Body", .weightReps),
+        ("Sled Push", "Full Body", .weightReps),
+    ]
+
+    /// Adds the v2 exercises, fixes tracking for existing ones (e.g. Plank → time),
+    /// and puts the StairMaster finisher at the end of the plan's routines. Runs once.
+    static func seedLibraryV2IfNeeded(_ context: ModelContext) {
+        let key = "seededLibraryV2"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+
+        var exercisesByName: [String: Exercise] = [:]
+        for exercise in (try? context.fetch(FetchDescriptor<Exercise>())) ?? [] {
+            exercisesByName[exercise.name.lowercased()] = exercise
+        }
+        for (name, group, tracking) in libraryV2 {
+            if let existing = exercisesByName[name.lowercased()] {
+                existing.tracking = tracking
+            } else {
+                let exercise = Exercise(name: name, muscleGroup: group, tracking: tracking)
+                context.insert(exercise)
+                exercisesByName[name.lowercased()] = exercise
+            }
+        }
+
+        if let stairMaster = exercisesByName["stairmaster"] {
+            let planNames = Set(trainingPlan.map(\.name))
+            for routine in (try? context.fetch(FetchDescriptor<Routine>())) ?? [] where planNames.contains(routine.name) {
+                guard !routine.entries.contains(where: { $0.exercise == stairMaster }) else { continue }
+                let entry = RoutineExercise(
+                    order: (routine.entries.map(\.order).max() ?? -1) + 1,
+                    targetSets: 1,
+                    repTarget: "20 min"
+                )
+                context.insert(entry)
+                entry.exercise = stairMaster
+                routine.entries.append(entry)
+            }
+        }
+
+        try? context.save()
+        UserDefaults.standard.set(true, forKey: key)
+    }
+
     // MARK: - 8-week machine programme
 
     private struct PlanExercise {

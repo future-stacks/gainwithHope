@@ -33,6 +33,7 @@ struct RootView: View {
         .task {
             SeedData.seedIfNeeded(context)
             SeedData.seedTrainingPlanIfNeeded(context)
+            SeedData.seedLibraryV2IfNeeded(context)
         }
     }
 

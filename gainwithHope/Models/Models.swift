@@ -8,6 +8,8 @@ final class Exercise {
     var name: String
     var muscleGroup: String
     var createdAt: Date
+    /// Raw value of `ExerciseTracking`; stored as a string so new kinds don't need a migration.
+    var trackingRaw: String = ExerciseTracking.weightReps.rawValue
 
     @Relationship(deleteRule: .nullify, inverse: \WorkoutExercise.exercise)
     var workoutEntries: [WorkoutExercise] = []
@@ -15,10 +17,36 @@ final class Exercise {
     @Relationship(deleteRule: .nullify, inverse: \RoutineExercise.exercise)
     var routineEntries: [RoutineExercise] = []
 
-    init(name: String, muscleGroup: String) {
+    init(name: String, muscleGroup: String, tracking: ExerciseTracking = .weightReps) {
         self.name = name
         self.muscleGroup = muscleGroup
         self.createdAt = .now
+        self.trackingRaw = tracking.rawValue
+    }
+
+    var tracking: ExerciseTracking {
+        get { ExerciseTracking(rawValue: trackingRaw) ?? .weightReps }
+        set { trackingRaw = newValue.rawValue }
+    }
+}
+
+/// What you log for each set of an exercise.
+enum ExerciseTracking: String, CaseIterable, Identifiable {
+    /// Weight × reps (bench press, leg press…).
+    case weightReps
+    /// A hold, in seconds (plank, wall sit…).
+    case time
+    /// Minutes plus optional distance (treadmill, StairMaster, bike…).
+    case cardio
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .weightReps: return "Weight × reps"
+        case .time: return "Time (seconds)"
+        case .cardio: return "Cardio (minutes + km)"
+        }
     }
 }
 
@@ -132,12 +160,21 @@ final class WorkoutSet {
     var reps: Int
     var isCompleted: Bool
     var isWarmup: Bool
+    /// Used by time and cardio exercises.
+    var durationSeconds: Int = 0
+    /// Used by cardio exercises; 0 when not logged.
+    var distanceKm: Double = 0
     var workoutExercise: WorkoutExercise?
 
-    init(order: Int, weightKg: Double = 0, reps: Int = 0, isWarmup: Bool = false) {
+    init(
+        order: Int, weightKg: Double = 0, reps: Int = 0, isWarmup: Bool = false,
+        durationSeconds: Int = 0, distanceKm: Double = 0
+    ) {
         self.order = order
         self.weightKg = weightKg
         self.reps = reps
+        self.durationSeconds = durationSeconds
+        self.distanceKm = distanceKm
         self.isCompleted = false
         self.isWarmup = isWarmup
     }
@@ -190,7 +227,9 @@ extension ModelContext {
                 order: i,
                 weightKg: template?.weightKg ?? 0,
                 reps: template?.reps ?? 0,
-                isWarmup: previous.indices.contains(i) ? previous[i].isWarmup : false
+                isWarmup: previous.indices.contains(i) ? previous[i].isWarmup : false,
+                durationSeconds: template?.durationSeconds ?? 0,
+                distanceKm: template?.distanceKm ?? 0
             )
             insert(set)
             entry.sets.append(set)

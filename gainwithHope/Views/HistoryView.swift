@@ -97,7 +97,7 @@ struct WorkoutDetailView: View {
                             Text(set.isWarmup ? "W" : "\(index + 1)")
                                 .foregroundStyle(set.isWarmup ? Color.orange : Color.secondary)
                                 .frame(width: 24, alignment: .leading)
-                            Text("\(unit.format(set.weightKg)) × \(set.reps)")
+                            Text(set.summary(entry.exercise?.tracking ?? .weightReps, unit: unit))
                                 .monospacedDigit()
                             Spacer()
                             if set.estimatedOneRepMaxKg > 0, !set.isWarmup {

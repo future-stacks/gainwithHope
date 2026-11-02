@@ -94,6 +94,7 @@ struct NewExerciseView: View {
 
     @State private var name: String
     @State private var muscleGroup = MuscleGroup.all[0]
+    @State private var tracking = ExerciseTracking.weightReps
 
     init(initialName: String = "", onCreate: @escaping (Exercise) -> Void = { _ in }) {
         _name = State(initialValue: initialName)
@@ -107,6 +108,12 @@ struct NewExerciseView: View {
                 Picker("Muscle group", selection: $muscleGroup) {
                     ForEach(MuscleGroup.all, id: \.self) { Text($0).tag($0) }
                 }
+                Picker("Log as", selection: $tracking) {
+                    ForEach(ExerciseTracking.allCases) { Text($0.label).tag($0) }
+                }
+            }
+            .onChange(of: muscleGroup) { _, group in
+                if group == "Cardio" { tracking = .cardio }
             }
             .navigationTitle("New Exercise")
             .navigationBarTitleDisplayMode(.inline)
@@ -116,7 +123,7 @@ struct NewExerciseView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let exercise = Exercise(name: trimmedName, muscleGroup: muscleGroup)
+                        let exercise = Exercise(name: trimmedName, muscleGroup: muscleGroup, tracking: tracking)
                         context.insert(exercise)
                         try? context.save()
                         onCreate(exercise)
