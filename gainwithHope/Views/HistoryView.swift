@@ -8,6 +8,12 @@ struct HistoryView: View {
     @Query(filter: #Predicate<Workout> { $0.endDate != nil }, sort: \Workout.startDate, order: .reverse)
     private var workouts: [Workout]
 
+    /// A past workout being logged (shown in the editor sheet).
+    @State private var draft: Workout?
+    /// Kept after the sheet closes, so it can be thrown away if cancelled or left empty.
+    @State private var pendingDraft: Workout?
+    @State private var discardDraft = false
+
     var body: some View {
         List {
             ForEach(workouts) { workout in
@@ -23,15 +29,49 @@ struct HistoryView: View {
             }
         }
         .navigationTitle("History")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: logPastWorkout) {
+                    Label("Log Past Workout", systemImage: "plus")
+                }
+            }
+        }
         .overlay {
             if workouts.isEmpty {
                 ContentUnavailableView(
                     "No workouts yet",
                     systemImage: "dumbbell",
-                    description: Text("Finished workouts show up here.")
+                    description: Text("Finished workouts show up here. Tap + to log one you did earlier.")
                 )
             }
         }
+        .sheet(item: $draft, onDismiss: closeDraft) { workout in
+            WorkoutEditorView(workout: workout) {
+                discardDraft = true
+                draft = nil
+            }
+        }
+    }
+
+    private func logPastWorkout() {
+        let end = Date()
+        let start = end.addingTimeInterval(-3600)
+        let workout = Workout(name: Workout.defaultName(for: start), startDate: start)
+        workout.endDate = end
+        context.insert(workout)
+        discardDraft = false
+        pendingDraft = workout
+        draft = workout
+    }
+
+    /// Runs after the editor sheet has gone, so deleting never redraws a deleted workout.
+    private func closeDraft() {
+        guard let workout = pendingDraft else { return }
+        pendingDraft = nil
+        if discardDraft || workout.completedSets.isEmpty {
+            context.delete(workout)
+        }
+        try? context.save()
     }
 }
 
@@ -69,11 +109,15 @@ private struct WorkoutRow: View {
 }
 
 struct WorkoutDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
     @Bindable var workout: Workout
     @AppStorage("weightUnit") private var unit: WeightUnit = .kg
 
     @State private var savingToHealth = false
     @State private var healthError: String?
+    @State private var editing = false
+    @State private var confirmDelete = false
 
     var body: some View {
         List {
@@ -129,9 +173,40 @@ struct WorkoutDetailView: View {
                     Text(healthError).foregroundStyle(.red)
                 }
             }
+
+            Section {
+                Button("Delete Workout", role: .destructive) { confirmDelete = true }
+                    .frame(maxWidth: .infinity)
+            }
         }
         .navigationTitle(workout.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Edit") { editing = true }
+            }
+        }
+        .sheet(isPresented: $editing) {
+            WorkoutEditorView(workout: workout)
+        }
+        .confirmationDialog("Delete this workout?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Delete Workout", role: .destructive, action: deleteWorkout)
+        } message: {
+            Text(workout.savedToHealth
+                ? "It's removed from gainwithHope. The copy in Apple Health stays; delete it in the Health app if you want."
+                : "This can't be undone.")
+        }
+    }
+
+    /// Leave the screen first, then delete, so it never redraws a deleted workout.
+    private func deleteWorkout() {
+        let workout = workout
+        let context = context
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            context.delete(workout)
+            try? context.save()
+        }
     }
 
     private func saveToHealth() async {

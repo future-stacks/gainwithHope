@@ -61,16 +61,32 @@ private struct ExerciseGroup: Identifiable {
 }
 
 struct ExerciseDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
     @Bindable var exercise: Exercise
     @AppStorage("weightUnit") private var unit: WeightUnit = .kg
+
+    @State private var editing = false
+    @State private var confirmDelete = false
 
     var body: some View {
         let sessions = self.sessions
         let tracking = exercise.tracking
         List {
             Section {
+                if editing {
+                    TextField("Name", text: $exercise.name)
+                    Picker("Muscle group", selection: $exercise.muscleGroup) {
+                        ForEach(muscleGroups, id: \.self) { Text($0).tag($0) }
+                    }
+                } else {
+                    LabeledContent("Muscle group", value: exercise.muscleGroup)
+                }
                 Picker("Log as", selection: $exercise.tracking) {
                     ForEach(ExerciseTracking.allCases) { Text($0.label).tag($0) }
+                }
+                if editing {
+                    Button("Delete Exercise", role: .destructive) { confirmDelete = true }
                 }
             }
 
@@ -129,6 +145,41 @@ struct ExerciseDetailView: View {
         }
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(editing ? "Done" : "Edit") {
+                    if editing {
+                        let trimmed = exercise.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty { exercise.name = trimmed }
+                        try? context.save()
+                    }
+                    editing.toggle()
+                }
+                .bold(editing)
+            }
+        }
+        .confirmationDialog("Delete \(exercise.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Delete Exercise", role: .destructive, action: deleteExercise)
+        } message: {
+            Text("It's removed from your library and routines. Past workouts keep their sets, listed as \"Deleted exercise\".")
+        }
+    }
+
+    /// Includes the exercise's current group even if it isn't a standard one.
+    private var muscleGroups: [String] {
+        MuscleGroup.all.contains(exercise.muscleGroup) ? MuscleGroup.all : MuscleGroup.all + [exercise.muscleGroup]
+    }
+
+    /// Leave the screen first, then delete, so it never redraws a deleted exercise.
+    private func deleteExercise() {
+        let exercise = exercise
+        let context = context
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            for entry in exercise.routineEntries { context.delete(entry) }
+            context.delete(exercise)
+            try? context.save()
+        }
     }
 
     private func chartTitle(_ tracking: ExerciseTracking) -> String {

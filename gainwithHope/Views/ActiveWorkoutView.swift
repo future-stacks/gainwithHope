@@ -154,12 +154,15 @@ struct ActiveWorkoutView: View {
     }
 }
 
-private struct ExerciseSection: View {
+/// One exercise's sets. Used while logging and when editing a finished workout.
+struct ExerciseSection: View {
     @Environment(\.modelContext) private var context
     @Bindable var entry: WorkoutExercise
     let workout: Workout
     let unit: WeightUnit
-    var onSetCompleted: () -> Void
+    /// When editing a finished workout, new sets count as done straight away.
+    var newSetsCompleted = false
+    var onSetCompleted: () -> Void = {}
     var onRemove: () -> Void
 
     var body: some View {
@@ -247,6 +250,7 @@ private struct ExerciseSection: View {
             durationSeconds: last?.durationSeconds ?? 0,
             distanceKm: last?.distanceKm ?? 0
         )
+        set.isCompleted = newSetsCompleted
         context.insert(set)
         entry.sets.append(set)
     }
