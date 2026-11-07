@@ -86,7 +86,7 @@ struct SetRowView: View {
     }
 
     private var isEmpty: Bool {
-        set.weightKg == 0 && set.reps == 0 && set.durationSeconds == 0 && set.distanceKm == 0
+        return set.weightKg == 0 && set.reps == 0 && set.durationSeconds == 0 && set.distanceKm == 0
     }
 
     private func loadText() {
