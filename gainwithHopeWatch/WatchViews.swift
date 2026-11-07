@@ -24,7 +24,7 @@ private struct IdleView: View {
             VStack(spacing: 12) {
                 Image(systemName: "dumbbell.fill")
                     .font(.largeTitle)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.accentColor)
                 if let phone = manager.phoneState, phone.phase == .active {
                     Text(phone.name)
                         .font(.headline)
@@ -32,14 +32,14 @@ private struct IdleView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     Button("Track on Watch") { manager.start() }
-                        .tint(.orange)
+                        .tint(Color.accentColor)
                 } else {
                     Text("Start a workout on your iPhone and it will show up here.")
                         .font(.footnote)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
                     Button("Start Strength Workout") { manager.start() }
-                        .tint(.orange)
+                        .tint(Color.accentColor)
                 }
             }
             .padding(.horizontal)
@@ -55,7 +55,7 @@ private struct MetricsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(formatElapsed(manager.elapsedTime(at: context.date)))
                     .font(.system(.title, design: .rounded).monospacedDigit().weight(.semibold))
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(Color.accentColor)
 
                 Label("\(Int(manager.heartRate.rounded())) BPM", systemImage: "heart.fill")
                     .foregroundStyle(.pink)
@@ -65,7 +65,7 @@ private struct MetricsView: View {
                 if let phone = manager.phoneState, phone.phase == .active {
                     if let rest = phone.restEndDate, rest > context.date {
                         Label("Rest \(formatElapsed(rest.timeIntervalSince(context.date).rounded(.up)))", systemImage: "timer")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color.accentColor)
                     } else if let exercise = phone.currentExercise {
                         Text(exercise)
                             .font(.footnote.weight(.semibold))
@@ -101,7 +101,7 @@ private struct ControlsView: View {
             } label: {
                 Label(manager.isPaused ? "Resume" : "Pause", systemImage: manager.isPaused ? "play.fill" : "pause.fill")
             }
-            .tint(.yellow)
+            .tint(Color.accentColor)
 
             Button {
                 manager.end()

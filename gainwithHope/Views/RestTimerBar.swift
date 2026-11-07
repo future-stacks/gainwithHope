@@ -9,7 +9,6 @@ struct RestTimerBar: View {
                 let remaining = max(0, end.timeIntervalSince(context.date))
                 VStack(spacing: 10) {
                     ProgressView(value: timer.duration > 0 ? remaining / timer.duration : 0)
-                        .tint(.blue)
                     HStack {
                         Button("−15s") { timer.add(-15) }
                             .buttonStyle(.bordered)

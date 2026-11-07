@@ -2,7 +2,10 @@
 
 A personal workout tracker for iPhone, in the spirit of Strong / Hevy, built just for me.
 
+- **Home**: greeting, today's programme card with one-tap start, and this week's training days
 - **Start a workout** empty or from a saved routine (Push Day, Leg Day…)
+- **Progress**: weekly volume and workout charts, plus every lift's estimated 1RM trend
+- Dark theme with a purple accent
 - **Log as you go**: weight × reps per set, tick each set off, warm-up sets, add/remove sets and exercises
 - **"Previous" column** shows what you did last time; new sets are pre-filled with it
 - **Rest timer** starts automatically after each set, with a notification when the phone is locked

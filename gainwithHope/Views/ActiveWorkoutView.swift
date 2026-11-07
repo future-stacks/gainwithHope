@@ -59,6 +59,16 @@ struct ActiveWorkoutView: View {
                             .frame(maxWidth: .infinity)
                             .font(.headline)
                     }
+                    Button {
+                        confirmFinish = true
+                    } label: {
+                        Text("Finish Workout")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                    }
+                    .listRowBackground(Color.accentColor)
                     Button(role: .destructive) {
                         confirmDiscard = true
                     } label: {
@@ -87,7 +97,6 @@ struct ActiveWorkoutView: View {
                     Button("Finish") { confirmFinish = true }
                         .bold()
                         .buttonStyle(.borderedProminent)
-                        .tint(.green)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()

@@ -10,38 +10,36 @@ struct ExercisesView: View {
     @State private var showNewExercise = false
 
     var body: some View {
-        NavigationStack {
-            List {
-                ForEach(groups) { group in
-                    Section(group.name) {
-                        ForEach(group.exercises) { exercise in
-                            NavigationLink {
-                                ExerciseDetailView(exercise: exercise)
-                            } label: {
-                                Text(exercise.name)
-                            }
+        List {
+            ForEach(groups) { group in
+                Section(group.name) {
+                    ForEach(group.exercises) { exercise in
+                        NavigationLink {
+                            ExerciseDetailView(exercise: exercise)
+                        } label: {
+                            Text(exercise.name)
                         }
-                        .onDelete { offsets in
-                            for index in offsets { context.delete(group.exercises[index]) }
-                            try? context.save()
-                        }
+                    }
+                    .onDelete { offsets in
+                        for index in offsets { context.delete(group.exercises[index]) }
+                        try? context.save()
                     }
                 }
             }
-            .searchable(text: $search)
-            .navigationTitle("Exercises")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showNewExercise = true
-                    } label: {
-                        Label("New Exercise", systemImage: "plus")
-                    }
+        }
+        .searchable(text: $search)
+        .navigationTitle("Exercises")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showNewExercise = true
+                } label: {
+                    Label("New Exercise", systemImage: "plus")
                 }
             }
-            .sheet(isPresented: $showNewExercise) {
-                NewExerciseView()
-            }
+        }
+        .sheet(isPresented: $showNewExercise) {
+            NewExerciseView()
         }
     }
 

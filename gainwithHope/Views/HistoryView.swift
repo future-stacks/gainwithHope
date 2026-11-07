@@ -9,29 +9,27 @@ struct HistoryView: View {
     private var workouts: [Workout]
 
     var body: some View {
-        NavigationStack {
-            List {
-                ForEach(workouts) { workout in
-                    NavigationLink {
-                        WorkoutDetailView(workout: workout)
-                    } label: {
-                        WorkoutRow(workout: workout, unit: unit)
-                    }
-                }
-                .onDelete { offsets in
-                    for index in offsets { context.delete(workouts[index]) }
-                    try? context.save()
+        List {
+            ForEach(workouts) { workout in
+                NavigationLink {
+                    WorkoutDetailView(workout: workout)
+                } label: {
+                    WorkoutRow(workout: workout, unit: unit)
                 }
             }
-            .navigationTitle("History")
-            .overlay {
-                if workouts.isEmpty {
-                    ContentUnavailableView(
-                        "No workouts yet",
-                        systemImage: "dumbbell",
-                        description: Text("Finished workouts show up here.")
-                    )
-                }
+            .onDelete { offsets in
+                for index in offsets { context.delete(workouts[index]) }
+                try? context.save()
+            }
+        }
+        .navigationTitle("History")
+        .overlay {
+            if workouts.isEmpty {
+                ContentUnavailableView(
+                    "No workouts yet",
+                    systemImage: "dumbbell",
+                    description: Text("Finished workouts show up here.")
+                )
             }
         }
     }

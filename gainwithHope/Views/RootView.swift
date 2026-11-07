@@ -15,14 +15,14 @@ struct RootView: View {
 
     var body: some View {
         TabView {
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house.fill") }
             StartWorkoutView()
-                .tabItem { Label("Workout", systemImage: "dumbbell.fill") }
-            HistoryView()
-                .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
-            ExercisesView()
-                .tabItem { Label("Exercises", systemImage: "list.bullet") }
+                .tabItem { Label("Workouts", systemImage: "dumbbell.fill") }
+            ProgressTabView()
+                .tabItem { Label("Progress", systemImage: "chart.bar.fill") }
             SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
         .fullScreenCover(item: activeWorkoutBinding, onDismiss: performPendingClose) { workout in
             ActiveWorkoutView(workout: workout) { action in

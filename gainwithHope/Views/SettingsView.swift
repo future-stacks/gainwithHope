@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("autoRestTimer") private var autoRestTimer = true
     @AppStorage("saveToHealth") private var saveToHealth = true
     @AppStorage("useWatch") private var useWatch = true
+    @AppStorage("userName") private var userName = "Hope"
 
     @State private var healthConnected = HealthKitManager.shared.canSaveWorkouts
     @State private var healthError: String?
@@ -15,6 +16,10 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Profile") {
+                    TextField("Your name", text: $userName)
+                }
+
                 Section("Units") {
                     Picker("Weight", selection: $unit) {
                         ForEach(WeightUnit.allCases) { Text($0.rawValue).tag($0) }
@@ -37,7 +42,7 @@ struct SettingsView: View {
                     Toggle("Save workouts to Apple Health", isOn: $saveToHealth)
                     if healthConnected {
                         Label("Connected", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     } else {
                         Button {
                             Task { await connectHealth() }

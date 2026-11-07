@@ -49,12 +49,12 @@ struct SetRowView: View {
             Button(action: toggleCompleted) {
                 Image(systemName: set.isCompleted ? "checkmark.square.fill" : "checkmark.square")
                     .font(.title2)
-                    .foregroundStyle(set.isCompleted ? Color.green : Color.secondary)
+                    .foregroundStyle(set.isCompleted ? Color.accentColor : Color.secondary)
             }
             .buttonStyle(.borderless)
             .frame(width: 32)
         }
-        .listRowBackground(set.isCompleted ? Color.green.opacity(0.15) : nil)
+        .listRowBackground(set.isCompleted ? Color.accentColor.opacity(0.18) : nil)
         .sensoryFeedback(.success, trigger: set.isCompleted) { _, completed in completed }
         .onAppear(perform: loadText)
         .onChange(of: unit) { loadText() }

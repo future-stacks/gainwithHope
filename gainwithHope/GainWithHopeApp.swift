@@ -23,6 +23,7 @@ struct GainWithHopeApp: App {
         WindowGroup {
             RootView()
                 .environment(restTimer)
+                .preferredColorScheme(.dark)
         }
         .modelContainer(container)
     }

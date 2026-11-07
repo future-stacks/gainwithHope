@@ -86,7 +86,7 @@ struct StartWorkoutView: View {
                     }
                 }
             }
-            .navigationTitle("Workout")
+            .navigationTitle("Workouts")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -103,8 +103,7 @@ struct StartWorkoutView: View {
     }
 
     private func start(_ routine: Routine?) {
-        let workout = context.startWorkout(from: routine)
-        WatchBridge.shared.workoutStarted(workout)
+        beginWorkout(from: routine, in: context)
     }
 
     private var todaysRoutine: Routine? {
